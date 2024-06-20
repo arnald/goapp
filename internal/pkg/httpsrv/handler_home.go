@@ -3,6 +3,8 @@ package httpsrv
 import (
 	"html/template"
 	"net/http"
+
+	"github.com/gorilla/csrf"
 )
 
 func (s *Server) handlerHome(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +28,7 @@ window.addEventListener("load", function(evt) {
         if (ws) {
             return false;
         }
-        ws = new WebSocket("{{.}}");
+        ws = new WebSocket("{{.WebSocketURL}}");
         ws.onopen = function(evt) {
             print("OPEN");
         }
@@ -67,16 +69,21 @@ window.addEventListener("load", function(evt) {
 "Send" to send a message to the server and "Close" to close the connection. 
 You can change the message and send multiple times.
 <p>
-<form>
-<button id="open">Open</button>
-<button id="close">Close</button>
-<p><input id="input" type="text" value="{}">
-<button id="send">Reset</button>
+<form method="POST" action="/some-action">
+	<input type="hidden" name="{{.CSRFTokenName}}" value="{{.CSRFToken}}">
+	<button id="open">Open</button>
+	<button id="close">Close</button>
+	<p><input id="input" type="text" value="{}">
+	<button id="send">Reset</button>
 </form>
 </td><td valign="top" width="50%">
 <div id="output" style="max-height: 70vh;overflow-y: scroll;"></div>
 </td></tr></table>
 </body>
 </html>
-`)).Execute(w, "ws://"+r.Host+"/goapp/ws")
+`)).Execute(w, map[string]interface{}{
+		"WebSocketURL":  "ws://" + r.Host + "/goapp/ws",
+		"CSRFTokenName": csrf.TemplateTag,
+		"CSRFToken":     csrf.Token(r),
+	})
 }

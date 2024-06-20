@@ -9,6 +9,9 @@ import (
 	"syscall"
 
 	goapp "goapp/internal/app/server"
+	"goapp/pkg/util"
+
+	"github.com/gorilla/csrf"
 )
 
 func init() {
@@ -17,6 +20,13 @@ func init() {
 }
 
 func main() {
+	secureKey := util.GenerateSecureKey()
+
+	CSRF := csrf.Protect(
+		secureKey,
+		csrf.Secure(false), // Set to true in production
+	)
+
 	// Debug.
 	go func() {
 		log.Println(http.ListenAndServe(":6060", nil))
@@ -27,7 +37,7 @@ func main() {
 	signal.Notify(exitChannel, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start.
-	if err := goapp.Start(exitChannel); err != nil {
+	if err := goapp.Start(exitChannel, CSRF); err != nil {
 		log.Fatalf("fatal: %+v\n", err)
 	}
 }

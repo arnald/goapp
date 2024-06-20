@@ -36,7 +36,7 @@ func New(strChan <-chan string) *Server {
 	return &s
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(csrfMiddleware func(http.Handler) http.Handler) error {
 	// Create router.
 	r := mux.NewRouter()
 
@@ -52,13 +52,15 @@ func (s *Server) Start() error {
 		}
 	}
 
+	csrfProtectedRouter := csrfMiddleware(r)
+
 	// Create HTTP server.
 	s.server = &http.Server{
 		Addr:         "localhost:8080",
 		WriteTimeout: 10 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		IdleTimeout:  10 * time.Second,
-		Handler:      handlers.CombinedLoggingHandler(os.Stdout, r),
+		Handler:      handlers.CombinedLoggingHandler(os.Stdout, csrfProtectedRouter),
 	}
 
 	// Start HTTP server.

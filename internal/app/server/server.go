@@ -5,10 +5,11 @@ import (
 	"goapp/internal/pkg/httpsrv"
 	"goapp/internal/pkg/strgen"
 	"log"
+	"net/http"
 	"os"
 )
 
-func Start(exitChannel chan os.Signal) error {
+func Start(exitChannel chan os.Signal, csrfMiddleware func(http.Handler) http.Handler) error {
 	var (
 		strChan = make(chan string, 100) // String channel with max parallel counter processes.
 		strCli  = strgen.New(strChan)    // String generator.
@@ -22,7 +23,7 @@ func Start(exitChannel chan os.Signal) error {
 	defer strCli.Stop()
 
 	// Start HTTP server.
-	if err := httpSrv.Start(); err != nil {
+	if err := httpSrv.Start(csrfMiddleware); err != nil {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
 	}
 	defer httpSrv.Stop()
