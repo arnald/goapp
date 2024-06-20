@@ -34,6 +34,12 @@ func (s *Server) myRoutes() []Route {
 			Pattern: "/goapp",
 			HFunc:   s.handlerWrapper(s.handlerHome),
 		},
+		{
+			Name:    "test",
+			Method:  "POST",
+			Pattern: "/goapp/test",
+			HFunc:   s.handlerWrapper(s.handlerTokenPost),
+		},
 	}
 }
 
