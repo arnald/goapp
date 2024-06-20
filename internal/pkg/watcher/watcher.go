@@ -3,6 +3,8 @@ package watcher
 import (
 	"sync"
 
+	"goapp/pkg/util"
+
 	"github.com/google/uuid"
 )
 
@@ -21,7 +23,7 @@ func New() *Watcher {
 	w.id = uuid.NewString()
 	w.inCh = make(chan string, 1)
 	w.outCh = make(chan *Counter, 1)
-	w.counter = &Counter{Iteration: 0}
+	w.counter = &Counter{Iteration: 0, Value: ""}
 	w.counterLock = &sync.RWMutex{}
 	w.quitChannel = make(chan struct{})
 	w.running = sync.WaitGroup{}
@@ -36,7 +38,10 @@ func (w *Watcher) Start() error {
 		for {
 			select {
 			case <-w.inCh:
+				w.counterLock.Lock()
 				w.counter.Iteration += 1
+				w.counter.Value = util.RandHexString(10)
+				w.counterLock.Unlock()
 				select {
 				case w.outCh <- w.counter:
 				case <-w.quitChannel:
@@ -70,6 +75,7 @@ func (w *Watcher) ResetCounter() {
 	defer w.counterLock.Unlock()
 
 	w.counter.Iteration = 0
+	w.counter.Value = util.RandHexString(10)
 
 	select {
 	case w.outCh <- w.counter:
